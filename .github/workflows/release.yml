@@ -1,0 +1,323 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag'
+        required: true
+        type: string
+
+env:
+  JAVA_VERSION: "21"
+  JAVA_DISTRIBUTION: "temurin"
+
+jobs:
+  build-linux:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build Linux executable
+        run: |
+          mvn -B clean package -Dgluonfx.target=host
+
+      - name: Package Linux executable
+        run: |
+          mkdir -p release/linux
+          # 查找生成的可执行文件
+          if [ -d "target/gluonfx/x86_64-linux" ]; then
+            cp -r target/gluonfx/x86_64-linux/* release/linux/
+          fi
+          # 创建启动脚本
+          cat > release/linux/start.sh << 'EOF'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          cd "$SCRIPT_DIR"
+          ./javafx-cross-platform-starter
+          EOF
+          chmod +x release/linux/start.sh
+          cd release && tar -czf javafx-app-linux-x64.tar.gz linux/
+
+      - name: Upload Linux artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-build
+          path: release/javafx-app-linux-x64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build Windows executable
+        run: |
+          mvn -B clean package -Dgluonfx.target=host
+
+      - name: Package Windows executable
+        run: |
+          mkdir -p release/windows
+          if (Test-Path "target/gluonfx/x86_64-windows") {
+            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "release/windows/" -Recurse
+          }
+          # 创建启动脚本
+          @"
+          @echo off
+          cd /d "%~dp0"
+          javafx-cross-platform-starter.exe
+          pause
+          "@ | Out-File -FilePath "release/windows/start.bat" -Encoding ASCII
+          Compress-Archive -Path "release/windows" -DestinationPath "release/javafx-app-windows-x64.zip"
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-build
+          path: release/javafx-app-windows-x64.zip
+
+  build-macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build macOS executable
+        run: |
+          mvn -B clean package -Dgluonfx.target=host
+
+      - name: Package macOS executable
+        run: |
+          mkdir -p release/macos
+          # 检查不同架构的输出目录
+          if [ -d "target/gluonfx/aarch64-macos" ]; then
+            cp -r target/gluonfx/aarch64-macos/* release/macos/
+          elif [ -d "target/gluonfx/x86_64-macos" ]; then
+            cp -r target/gluonfx/x86_64-macos/* release/macos/
+          fi
+          # 创建启动脚本
+          cat > release/macos/start.sh << 'EOF'
+          #!/bin/bash
+          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+          cd "$SCRIPT_DIR"
+          ./javafx-cross-platform-starter
+          EOF
+          chmod +x release/macos/start.sh
+          cd release && tar -czf javafx-app-macos.tar.gz macos/
+
+      - name: Upload macOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-build
+          path: release/javafx-app-macos.tar.gz
+
+  build-android:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Set up GraalVM
+        uses: graalvm/setup-graalvm@v1
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: "graalvm"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build Android APK
+        run: |
+          mvn -P android \
+            -Dgluonfx.target=android \
+            -Dgluonfx.attach.enabled=true \
+            -Dgluonfx.aot.enabled=true \
+            -Dgluonfx.aot.strip-debug=true \
+            -Dgluonfx.aot.graalvm-home=$GRAALVM_HOME \
+            -Dgluonfx.android.sdk-path=$ANDROID_HOME \
+            -B clean package
+
+      - name: Package Android APK
+        run: |
+          mkdir -p release/android
+          # 查找生成的APK文件
+          find target/gluonfx -name "*.apk" -exec cp {} release/android/javafx-app-android.apk \;
+
+      - name: Upload Android artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-build
+          path: release/android/javafx-app-android.apk
+
+  create-release:
+    needs: [build-linux, build-windows, build-macos, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get tag name
+        id: tag
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts -type f | sort
+
+      - name: Prepare release assets
+        run: |
+          mkdir -p release-assets
+          # 复制所有构建产物到release-assets目录
+          find artifacts -name "*.tar.gz" -exec cp {} release-assets/ \;
+          find artifacts -name "*.zip" -exec cp {} release-assets/ \;
+          find artifacts -name "*.apk" -exec cp {} release-assets/ \;
+
+          echo "Release assets:"
+          ls -la release-assets/
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          cat > release_notes.md << 'EOF'
+          ## JavaFX Cross-Platform Application Release ${{ steps.tag.outputs.tag }}
+
+          ### 🎉 What's New
+          - Cross-platform JavaFX application with native compilation
+          - Support for Windows, macOS, Linux, and Android platforms
+          - Optimized native executables using GraalVM
+
+          ### 📦 Downloads
+          Choose the appropriate package for your platform:
+
+          - **🐧 Linux (x64)**: `javafx-app-linux-x64.tar.gz`
+            - Extract and run `./start.sh` or `./javafx-cross-platform-starter`
+
+          - **🪟 Windows (x64)**: `javafx-app-windows-x64.zip`
+            - Extract and run `start.bat` or `javafx-cross-platform-starter.exe`
+
+          - **🍎 macOS**: `javafx-app-macos.tar.gz`
+            - Extract and run `./start.sh` or `./javafx-cross-platform-starter`
+
+          - **🤖 Android**: `javafx-app-android.apk`
+            - Install on Android device (requires enabling "Unknown sources")
+
+          ### 🚀 Installation Instructions
+
+          #### Desktop Platforms (Linux/Windows/macOS)
+          1. Download the appropriate archive for your platform
+          2. Extract the archive to a directory of your choice
+          3. Run the startup script or executable directly
+          4. Enjoy the application!
+
+          #### Android
+          1. Download the APK file
+          2. Enable "Install from unknown sources" in your Android settings
+          3. Install the APK file
+          4. Launch the app from your app drawer
+
+          ### 🔧 Requirements
+          - **Desktop**: No additional requirements (self-contained executables)
+          - **Android**: Android 7.0 (API level 24) or higher
+
+          ### 🐛 Known Issues
+          - First launch may take a few seconds due to native compilation optimizations
+          - On macOS, you may need to allow the app in System Preferences > Security & Privacy
+
+          ### 📝 Changelog
+          For a complete list of changes, see the commit history.
+          EOF
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          name: JavaFX Cross-Platform App ${{ steps.tag.outputs.tag }}
+          bodyFile: release_notes.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') || contains(steps.tag.outputs.tag, 'alpha') || contains(steps.tag.outputs.tag, 'beta') || contains(steps.tag.outputs.tag, 'rc') }}
+          artifacts: release-assets/*
+          token: ${{ secrets.GITHUB_TOKEN }}
+          makeLatest: true
+
+      - name: Upload release summary
+        run: |
+          echo "🎉 Release ${{ steps.tag.outputs.tag }} has been created successfully!" >> $GITHUB_STEP_SUMMARY
+          echo "📦 The following artifacts have been uploaded:" >> $GITHUB_STEP_SUMMARY
+          echo "- Linux x64 (tar.gz)" >> $GITHUB_STEP_SUMMARY
+          echo "- Windows x64 (zip)" >> $GITHUB_STEP_SUMMARY
+          echo "- macOS (tar.gz)" >> $GITHUB_STEP_SUMMARY
+          echo "- Android (apk)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "🔗 Check the [Releases page](https://github.com/${{ github.repository }}/releases) to download the binaries." >> $GITHUB_STEP_SUMMARY

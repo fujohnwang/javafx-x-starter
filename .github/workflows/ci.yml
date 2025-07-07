@@ -1,83 +1,277 @@
-name: JavaFX CI
+name: JavaFX CI/CD
 
 on:
   push:
-    branches: [master]
+    branches: [master, main]
+    tags: ["v*"]
+  pull_request:
+    branches: [master, main]
   workflow_dispatch:
+
+env:
+  JAVA_VERSION: "21"
+  JAVA_DISTRIBUTION: "temurin"
 
 jobs:
   build-linux:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 24
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          java-version: "24"
-          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
-      - name: Upload artifact
+        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
+
+      - name: Package Linux executable
+        run: |
+          mkdir -p dist/linux
+          if [ -f target/gluonfx/x86_64-linux/* ]; then
+            cp -r target/gluonfx/x86_64-linux/* dist/linux/
+          fi
+          cd dist && tar -czf javafx-app-linux-x64.tar.gz linux/
+
+      - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: javafx-app-linux
-          path: target/gluonfx/x86_64-linux/
+          path: dist/javafx-app-linux-x64.tar.gz
+          retention-days: 30
 
   build-windows:
     runs-on: windows-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 24
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          java-version: "24"
-          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
-      - name: Upload artifact
+        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
+
+      - name: Package Windows executable
+        run: |
+          mkdir -p dist/windows
+          if (Test-Path "target/gluonfx/x86_64-windows/*") {
+            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse
+          }
+          Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip"
+
+      - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: javafx-app-windows
-          path: target/gluonfx/x86_64-windows/
+          path: dist/javafx-app-windows-x64.zip
+          retention-days: 30
 
   build-macos:
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 24
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          java-version: "24"
-          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Build with Maven
-        run: mvn -B package --file pom.xml
-      - name: Upload artifact
+        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
+
+      - name: Package macOS executable
+        run: |
+          mkdir -p dist/macos
+          if [ -d "target/gluonfx/aarch64-macos" ]; then
+            cp -r target/gluonfx/aarch64-macos/* dist/macos/
+          elif [ -d "target/gluonfx/x86_64-macos" ]; then
+            cp -r target/gluonfx/x86_64-macos/* dist/macos/
+          fi
+          cd dist && tar -czf javafx-app-macos.tar.gz macos/
+
+      - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: javafx-app-macos
-          path: target/gluonfx/aarch64-macos/
+          path: dist/javafx-app-macos.tar.gz
+          retention-days: 30
 
   build-android:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up JDK 24
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
         uses: actions/setup-java@v4
         with:
-          java-version: "24"
-          distribution: "temurin"
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
       - name: Set up Android SDK
-        uses: android-actions/setup-android@v2
+        uses: android-actions/setup-android@v3
+
       - name: Set up GraalVM
         uses: graalvm/setup-graalvm@v1
         with:
-          java-version: "24"
+          java-version: ${{ env.JAVA_VERSION }}
           distribution: "graalvm"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
       - name: Build with Maven for Android
-        run: mvn -P android -Dgluonfx.target=android -Dgluonfx.attach.enabled=true -Dgluonfx.aot.enabled=true -Dgluonfx.aot.strip-debug=true -Dgluonfx.aot.graalvm-home=$GRAALVM_HOME -Dgluonfx.android.sdk-path=$ANDROID_HOME -B package --file pom.xml
-      - name: Upload artifact
+        run: |
+          mvn -P android \
+            -Dgluonfx.target=android \
+            -Dgluonfx.attach.enabled=true \
+            -Dgluonfx.aot.enabled=true \
+            -Dgluonfx.aot.strip-debug=true \
+            -Dgluonfx.aot.graalvm-home=$GRAALVM_HOME \
+            -Dgluonfx.android.sdk-path=$ANDROID_HOME \
+            -B clean package --file pom.xml
+
+      - name: Package Android APK
+        run: |
+          mkdir -p dist/android
+          if [ -f target/gluonfx/arm64-android/*.apk ]; then
+            cp target/gluonfx/arm64-android/*.apk dist/android/javafx-app-android.apk
+          fi
+
+      - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
           name: javafx-app-android
-          path: target/gluonfx/arm64-android/
+          path: dist/android/javafx-app-android.apk
+          retention-days: 30
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [build-linux, build-windows, build-macos, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get tag name
+        id: tag
+        run: echo "tag=${GITHUB_REF#refs/tags/}" >> $GITHUB_OUTPUT
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: List artifacts
+        run: |
+          echo "Downloaded artifacts:"
+          find artifacts -type f -name "*.tar.gz" -o -name "*.zip" -o -name "*.apk" | sort
+
+      - name: Generate release notes
+        id: release_notes
+        run: |
+          echo "## Release Notes for ${{ steps.tag.outputs.tag }}" > release_notes.md
+          echo "" >> release_notes.md
+          echo "### What's New" >> release_notes.md
+          echo "- JavaFX Cross-Platform Application" >> release_notes.md
+          echo "- Support for Windows, macOS, Linux, and Android" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Downloads" >> release_notes.md
+          echo "- **Linux**: javafx-app-linux-x64.tar.gz" >> release_notes.md
+          echo "- **Windows**: javafx-app-windows-x64.zip" >> release_notes.md
+          echo "- **macOS**: javafx-app-macos.tar.gz" >> release_notes.md
+          echo "- **Android**: javafx-app-android.apk" >> release_notes.md
+          echo "" >> release_notes.md
+          echo "### Installation" >> release_notes.md
+          echo "1. Download the appropriate file for your platform" >> release_notes.md
+          echo "2. Extract the archive (Linux/Windows/macOS) or install the APK (Android)" >> release_notes.md
+          echo "3. Run the executable" >> release_notes.md
+
+      - name: Create GitHub Release
+        uses: ncipollo/release-action@v1
+        with:
+          tag: ${{ steps.tag.outputs.tag }}
+          name: Release ${{ steps.tag.outputs.tag }}
+          bodyFile: release_notes.md
+          draft: false
+          prerelease: ${{ contains(steps.tag.outputs.tag, '-') }}
+          artifacts: |
+            artifacts/javafx-app-linux/javafx-app-linux-x64.tar.gz
+            artifacts/javafx-app-windows/javafx-app-windows-x64.zip
+            artifacts/javafx-app-macos/javafx-app-macos.tar.gz
+            artifacts/javafx-app-android/javafx-app-android.apk
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+  # 可选：构建iOS版本（需要macOS runner和额外配置）
+  build-ios:
+    if: false # 默认关闭，因为iOS构建需要额外的证书配置
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build with Maven for iOS
+        run: |
+          mvn -P ios \
+            -Dgluonfx.target=ios \
+            -B clean package --file pom.xml
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: javafx-app-ios
+          path: target/gluonfx/arm64-ios/
+          retention-days: 30
