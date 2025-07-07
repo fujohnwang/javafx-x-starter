@@ -141,18 +141,21 @@ jobs:
       - name: Test compile
         run: mvn clean compile
 
-      - name: Test Android configuration
+      - name: Test Android build
         run: |
-          echo "Testing Android setup..."
-          echo "ANDROID_HOME: $ANDROID_HOME"
-          echo "GRAALVM_HOME: $GRAALVM_HOME"
-          mvn clean compile --file pom.xml -P android -DskipTests
+          mvn -P android \
+            -Dgluonfx.target=android \
+            -Dgluonfx.attach.enabled=true \
+            -Dgluonfx.aot.enabled=true \
+            -Dgluonfx.aot.strip-debug=true \
+            -Dgluonfx.aot.graalvm-home=$GRAALVM_HOME \
+            -Dgluonfx.android.sdk-path=$ANDROID_HOME \
+            -B clean package --file pom.xml
 
-      - name: Verify Android dependencies
+      - name: Check Android build output
         run: |
-          echo "Verifying Android dependencies..."
-          ls -la $ANDROID_HOME/
-          java -version
+          echo "Checking Android build outputs..."
+          find target/gluonfx -name "*.apk" -exec ls -l {} \;
 
   code-quality:
     runs-on: ubuntu-latest

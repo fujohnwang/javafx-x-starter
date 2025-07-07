@@ -193,7 +193,9 @@ jobs:
       - name: Package Android APK
         run: |
           mkdir -p dist/android
-          find target/gluonfx -name "*.apk" -exec cp {} dist/android/javafx-app-android.apk \;
+          if [ -d "target/gluonfx/arm64-android" ]; then
+            cp target/gluonfx/arm64-android/*.apk dist/android/javafx-app-android.apk
+          fi
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
