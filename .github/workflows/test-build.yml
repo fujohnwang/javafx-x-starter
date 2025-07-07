@@ -66,13 +66,17 @@ jobs:
         run: mvn clean compile
 
       - name: Test Windows build
-        run: mvn clean package --file pom.xml -Dgluonfx.target=host -DskipTests
+        run: mvn clean package --file pom.xml "-Dgluonfx.target=host" -DskipTests
 
       - name: Check build output
         run: |
-          echo "Checking build outputs..."
-          dir target\
-          Get-ChildItem target\ -Recurse -Include "*.jar", "*.exe" | Select-Object -First 10
+          Write-Host "Checking build outputs..."
+          if (Test-Path "target") {
+            Get-ChildItem "target" -Recurse -Include "*.jar", "*.exe" | Select-Object -First 10
+          } else {
+            Write-Host "Target directory not found"
+          }
+        shell: powershell
 
   test-build-macos:
     runs-on: macos-latest

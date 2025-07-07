@@ -70,15 +70,17 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build with Maven
-        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
+        run: mvn -B clean package --file pom.xml "-Dgluonfx.target=host"
 
       - name: Package Windows executable
         run: |
-          mkdir -p dist/windows
-          if (Test-Path "target/gluonfx/x86_64-windows/*") {
-            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse
+          if (!(Test-Path "dist")) { New-Item -Path "dist" -ItemType Directory }
+          if (!(Test-Path "dist/windows")) { New-Item -Path "dist/windows" -ItemType Directory }
+          if (Test-Path "target/gluonfx/x86_64-windows") {
+            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse -Force
           }
-          Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip"
+          Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
+        shell: powershell
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
