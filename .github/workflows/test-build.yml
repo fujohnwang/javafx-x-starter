@@ -35,7 +35,7 @@ jobs:
         run: mvn clean compile
 
       - name: Test Linux build
-        run: mvn clean package -Dgluonfx.target=host -DskipTests
+        run: mvn clean package --file pom.xml -Dgluonfx.target=host -DskipTests
 
       - name: Check build output
         run: |
@@ -66,7 +66,7 @@ jobs:
         run: mvn clean compile
 
       - name: Test Windows build
-        run: mvn clean package -Dgluonfx.target=host -DskipTests
+        run: mvn clean package --file pom.xml -Dgluonfx.target=host -DskipTests
 
       - name: Check build output
         run: |
@@ -97,7 +97,7 @@ jobs:
         run: mvn clean compile
 
       - name: Test macOS build
-        run: mvn clean package -Dgluonfx.target=host -DskipTests
+        run: mvn clean package --file pom.xml -Dgluonfx.target=host -DskipTests
 
       - name: Check build output
         run: |
@@ -142,7 +142,7 @@ jobs:
           echo "Testing Android setup..."
           echo "ANDROID_HOME: $ANDROID_HOME"
           echo "GRAALVM_HOME: $GRAALVM_HOME"
-          mvn clean compile -P android -DskipTests
+          mvn clean compile --file pom.xml -P android -DskipTests
 
       - name: Verify Android dependencies
         run: |
@@ -170,7 +170,7 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Run tests
-        run: mvn test
+        run: mvn test --file pom.xml
 
       - name: Verify project structure
         run: |
@@ -183,7 +183,14 @@ jobs:
           ls -la *.xml *.yml *.yaml 2>/dev/null || echo "No config files found"
 
   build-summary:
-    needs: [test-build-linux, test-build-windows, test-build-macos, test-android-setup, code-quality]
+    needs:
+      [
+        test-build-linux,
+        test-build-windows,
+        test-build-macos,
+        test-android-setup,
+        code-quality,
+      ]
     runs-on: ubuntu-latest
     if: always()
     steps:

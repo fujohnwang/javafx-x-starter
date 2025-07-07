@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: 'Release tag'
+        description: "Release tag"
         required: true
         type: string
 
@@ -34,32 +34,31 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build Linux executable
-        run: |
-          mvn -B clean package -Dgluonfx.target=host
+      - name: Build with Maven
+        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
 
       - name: Package Linux executable
         run: |
-          mkdir -p release/linux
-          # 查找生成的可执行文件
+          mkdir -p dist/linux
           if [ -d "target/gluonfx/x86_64-linux" ]; then
-            cp -r target/gluonfx/x86_64-linux/* release/linux/
+            cp -r target/gluonfx/x86_64-linux/* dist/linux/
           fi
-          # 创建启动脚本
-          cat > release/linux/start.sh << 'EOF'
+          # Create startup script
+          cat > dist/linux/start.sh << 'EOF'
           #!/bin/bash
           SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
           cd "$SCRIPT_DIR"
           ./javafx-cross-platform-starter
           EOF
-          chmod +x release/linux/start.sh
-          cd release && tar -czf javafx-app-linux-x64.tar.gz linux/
+          chmod +x dist/linux/start.sh
+          cd dist && tar -czf javafx-app-linux-x64.tar.gz linux/
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
           name: linux-build
-          path: release/javafx-app-linux-x64.tar.gz
+          path: dist/javafx-app-linux-x64.tar.gz
+          retention-days: 30
 
   build-windows:
     runs-on: windows-latest
@@ -80,30 +79,36 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build Windows executable
-        run: |
-          mvn -B clean package -Dgluonfx.target=host
+      - name: Build with Maven
+        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
 
       - name: Package Windows executable
         run: |
-          mkdir -p release/windows
+          New-Item -Path "dist" -ItemType Directory -Force
+          New-Item -Path "dist/windows" -ItemType Directory -Force
           if (Test-Path "target/gluonfx/x86_64-windows") {
-            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "release/windows/" -Recurse
+            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse
           }
-          # 创建启动脚本
-          @"
+          # Create startup script
+          $batContent = @"
           @echo off
           cd /d "%~dp0"
+          echo Starting JavaFX Cross-Platform Application...
           javafx-cross-platform-starter.exe
-          pause
-          "@ | Out-File -FilePath "release/windows/start.bat" -Encoding ASCII
-          Compress-Archive -Path "release/windows" -DestinationPath "release/javafx-app-windows-x64.zip"
+          if %ERRORLEVEL% neq 0 (
+              echo Application exited with error code %ERRORLEVEL%
+              pause
+          )
+          "@
+          $batContent | Out-File -FilePath "dist/windows/start.bat" -Encoding ASCII
+          Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
           name: windows-build
-          path: release/javafx-app-windows-x64.zip
+          path: dist/javafx-app-windows-x64.zip
+          retention-days: 30
 
   build-macos:
     runs-on: macos-latest
@@ -124,34 +129,34 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build macOS executable
-        run: |
-          mvn -B clean package -Dgluonfx.target=host
+      - name: Build with Maven
+        run: mvn -B clean package --file pom.xml -Dgluonfx.target=host
 
       - name: Package macOS executable
         run: |
-          mkdir -p release/macos
-          # 检查不同架构的输出目录
+          mkdir -p dist/macos
+          # Check for different architecture outputs
           if [ -d "target/gluonfx/aarch64-macos" ]; then
-            cp -r target/gluonfx/aarch64-macos/* release/macos/
+            cp -r target/gluonfx/aarch64-macos/* dist/macos/
           elif [ -d "target/gluonfx/x86_64-macos" ]; then
-            cp -r target/gluonfx/x86_64-macos/* release/macos/
+            cp -r target/gluonfx/x86_64-macos/* dist/macos/
           fi
-          # 创建启动脚本
-          cat > release/macos/start.sh << 'EOF'
+          # Create startup script
+          cat > dist/macos/start.sh << 'EOF'
           #!/bin/bash
           SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
           cd "$SCRIPT_DIR"
           ./javafx-cross-platform-starter
           EOF
-          chmod +x release/macos/start.sh
-          cd release && tar -czf javafx-app-macos.tar.gz macos/
+          chmod +x dist/macos/start.sh
+          cd dist && tar -czf javafx-app-macos.tar.gz macos/
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
           name: macos-build
-          path: release/javafx-app-macos.tar.gz
+          path: dist/javafx-app-macos.tar.gz
+          retention-days: 30
 
   build-android:
     runs-on: ubuntu-latest
@@ -182,7 +187,7 @@ jobs:
           key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
           restore-keys: ${{ runner.os }}-m2
 
-      - name: Build Android APK
+      - name: Build with Maven for Android
         run: |
           mvn -P android \
             -Dgluonfx.target=android \
@@ -191,19 +196,19 @@ jobs:
             -Dgluonfx.aot.strip-debug=true \
             -Dgluonfx.aot.graalvm-home=$GRAALVM_HOME \
             -Dgluonfx.android.sdk-path=$ANDROID_HOME \
-            -B clean package
+            -B clean package --file pom.xml
 
       - name: Package Android APK
         run: |
-          mkdir -p release/android
-          # 查找生成的APK文件
-          find target/gluonfx -name "*.apk" -exec cp {} release/android/javafx-app-android.apk \;
+          mkdir -p dist/android
+          find target/gluonfx -name "*.apk" -exec cp {} dist/android/javafx-app-android.apk \;
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
           name: android-build
-          path: release/android/javafx-app-android.apk
+          path: dist/android/javafx-app-android.apk
+          retention-days: 30
 
   create-release:
     needs: [build-linux, build-windows, build-macos, build-android]
@@ -231,19 +236,12 @@ jobs:
         with:
           path: artifacts
 
-      - name: List downloaded artifacts
-        run: |
-          echo "Downloaded artifacts:"
-          find artifacts -type f | sort
-
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          # 复制所有构建产物到release-assets目录
           find artifacts -name "*.tar.gz" -exec cp {} release-assets/ \;
           find artifacts -name "*.zip" -exec cp {} release-assets/ \;
           find artifacts -name "*.apk" -exec cp {} release-assets/ \;
-
           echo "Release assets:"
           ls -la release-assets/
 
@@ -294,9 +292,6 @@ jobs:
           ### 🐛 Known Issues
           - First launch may take a few seconds due to native compilation optimizations
           - On macOS, you may need to allow the app in System Preferences > Security & Privacy
-
-          ### 📝 Changelog
-          For a complete list of changes, see the commit history.
           EOF
 
       - name: Create GitHub Release
