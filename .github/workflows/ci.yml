@@ -1,11 +1,11 @@
 name: JavaFX CI/CD
 
 on:
-  push:
-    branches: [master, main]
-    tags: ["v*"]
-  pull_request:
-    branches: [master, main]
+  # push:
+  #   branches: [master, main]
+  #   tags: ["v*"]
+  # pull_request:
+  #   branches: [master, main]
   workflow_dispatch:
 
 env:
