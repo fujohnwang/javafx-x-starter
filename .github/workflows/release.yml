@@ -80,57 +80,19 @@ jobs:
           restore-keys: ${{ runner.os }}-m2
 
       - name: Build with Maven
-        run: |
-          mvn -B clean package --file pom.xml "-Dgluonfx.target=host"
-        shell: powershell
+        run: mvn -B clean package --file pom.xml "-Dgluonfx.target=host"
 
       - name: Package Windows executable
         run: |
-          # Create directories
-          if (!(Test-Path "dist")) { New-Item -Path "dist" -ItemType Directory }
-          if (!(Test-Path "dist/windows")) { New-Item -Path "dist/windows" -ItemType Directory }
-
-          # Copy build artifacts
+          New-Item -Path "dist" -ItemType Directory -Force
+          New-Item -Path "dist/windows" -ItemType Directory -Force
           if (Test-Path "target/gluonfx/x86_64-windows") {
             Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse -Force
-            Write-Host "Copied Windows executable files"
-          } else {
-            Write-Host "Warning: x86_64-windows directory not found"
-            Write-Host "Available directories in target/gluonfx:"
-            if (Test-Path "target/gluonfx") {
-              Get-ChildItem "target/gluonfx" | ForEach-Object { Write-Host "  - $($_.Name)" }
-            }
           }
-
-          # Create startup script
-          $batContent = @'
-@echo off
-cd /d "%~dp0"
-echo Starting JavaFX Cross-Platform Application...
-if exist "javafx-cross-platform-starter.exe" (
-    javafx-cross-platform-starter.exe
-) else (
-    echo Error: javafx-cross-platform-starter.exe not found
-    pause
-    exit /b 1
-)
-if %ERRORLEVEL% neq 0 (
-    echo Application exited with error code %ERRORLEVEL%
-    pause
-)
-'@
-
-          $batContent | Out-File -FilePath "dist/windows/start.bat" -Encoding ASCII
-          Write-Host "Created startup script"
-
-          # Create ZIP package
-          if (Test-Path "dist/windows") {
-            Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
-            Write-Host "Created ZIP package: dist/javafx-app-windows-x64.zip"
-          } else {
-            Write-Host "Error: dist/windows directory not found"
-            exit 1
-          }
+          Set-Content -Path "dist/windows/start.bat" -Value "@echo off"
+          Add-Content -Path "dist/windows/start.bat" -Value "javafx-cross-platform-starter.exe"
+          Add-Content -Path "dist/windows/start.bat" -Value "pause"
+          Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
         shell: powershell
 
       - name: Upload Windows artifact
@@ -289,16 +251,16 @@ if %ERRORLEVEL% neq 0 (
           ### 📦 Downloads
           Choose the appropriate package for your platform:
 
-          - **🐧 Linux (x64)**: `javafx-app-linux-x64.tar.gz`
-            - Extract and run `./start.sh` or `./javafx-cross-platform-starter`
+          - **🐧 Linux (x64)**: javafx-app-linux-x64.tar.gz
+            - Extract and run ./start.sh or ./javafx-cross-platform-starter
 
-          - **🪟 Windows (x64)**: `javafx-app-windows-x64.zip`
-            - Extract and run `start.bat` or `javafx-cross-platform-starter.exe`
+          - **🪟 Windows (x64)**: javafx-app-windows-x64.zip
+            - Extract and run start.bat or javafx-cross-platform-starter.exe
 
-          - **🍎 macOS**: `javafx-app-macos.tar.gz`
-            - Extract and run `./start.sh` or `./javafx-cross-platform-starter`
+          - **🍎 macOS**: javafx-app-macos.tar.gz
+            - Extract and run ./start.sh or ./javafx-cross-platform-starter
 
-          - **🤖 Android**: `javafx-app-android.apk`
+          - **🤖 Android**: javafx-app-android.apk
             - Install on Android device (requires enabling "Unknown sources")
 
           ### 🚀 Installation Instructions
