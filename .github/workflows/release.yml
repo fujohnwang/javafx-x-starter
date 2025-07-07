@@ -41,16 +41,16 @@ jobs:
         run: |
           mkdir -p dist/linux
           if [ -d "target/gluonfx/x86_64-linux" ]; then
-            cp -r target/gluonfx/x86_64-linux/* dist/linux/
+            cp -a target/gluonfx/x86_64-linux/. dist/linux/
+            # Create startup script
+            cat > dist/linux/start.sh << 'EOF'
+            #!/bin/bash
+            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+            cd "$SCRIPT_DIR"
+            ./javafx-cross-platform-starter
+            EOF
+            chmod +x dist/linux/start.sh
           fi
-          # Create startup script
-          cat > dist/linux/start.sh << 'EOF'
-          #!/bin/bash
-          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-          cd "$SCRIPT_DIR"
-          ./javafx-cross-platform-starter
-          EOF
-          chmod +x dist/linux/start.sh
           cd dist && tar -czf javafx-app-linux-x64.tar.gz linux/
 
       - name: Upload Linux artifact
@@ -88,10 +88,10 @@ jobs:
           New-Item -Path "dist/windows" -ItemType Directory -Force
           if (Test-Path "target/gluonfx/x86_64-windows") {
             Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse -Force
+            Set-Content -Path "dist/windows/start.bat" -Value "@echo off"
+            Add-Content -Path "dist/windows/start.bat" -Value "javafx-cross-platform-starter.exe"
+            Add-Content -Path "dist/windows/start.bat" -Value "pause"
           }
-          Set-Content -Path "dist/windows/start.bat" -Value "@echo off"
-          Add-Content -Path "dist/windows/start.bat" -Value "javafx-cross-platform-starter.exe"
-          Add-Content -Path "dist/windows/start.bat" -Value "pause"
           Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
         shell: powershell
 
@@ -129,18 +129,20 @@ jobs:
           mkdir -p dist/macos
           # Check for different architecture outputs
           if [ -d "target/gluonfx/aarch64-macos" ]; then
-            cp -r target/gluonfx/aarch64-macos/* dist/macos/
+            cp -a target/gluonfx/aarch64-macos/. dist/macos/
           elif [ -d "target/gluonfx/x86_64-macos" ]; then
-            cp -r target/gluonfx/x86_64-macos/* dist/macos/
+            cp -a target/gluonfx/x86_64-macos/. dist/macos/
           fi
-          # Create startup script
-          cat > dist/macos/start.sh << 'EOF'
-          #!/bin/bash
-          SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-          cd "$SCRIPT_DIR"
-          ./javafx-cross-platform-starter
-          EOF
-          chmod +x dist/macos/start.sh
+          # Create startup script only if executable exists
+          if [ -f "dist/macos/javafx-cross-platform-starter" ]; then
+            cat > dist/macos/start.sh << 'EOF'
+            #!/bin/bash
+            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+            cd "$SCRIPT_DIR"
+            ./javafx-cross-platform-starter
+            EOF
+            chmod +x dist/macos/start.sh
+          fi
           cd dist && tar -czf javafx-app-macos.tar.gz macos/
 
       - name: Upload macOS artifact
@@ -193,8 +195,13 @@ jobs:
       - name: Package Android APK
         run: |
           mkdir -p dist/android
-          if [ -d "target/gluonfx/arm64-android" ]; then
-            cp target/gluonfx/arm64-android/*.apk dist/android/javafx-app-android.apk
+          apk_file=$(find target/gluonfx -name "*.apk" -type f | head -n 1)
+          if [ -n "$apk_file" ]; then
+            echo "Found APK: $apk_file"
+            cp "$apk_file" dist/android/javafx-app-android.apk
+          else
+            echo "::error::APK file not found in target/gluonfx"
+            exit 1
           fi
 
       - name: Upload Android artifact
