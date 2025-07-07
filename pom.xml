@@ -16,6 +16,8 @@
         <main.class>com.example.App</main.class>
         <maven.compiler.plugin.version>3.13.0</maven.compiler.plugin.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
+        <!-- Default target for desktop builds -->
+        <gluonfx.target>host</gluonfx.target>
     </properties>
 
     <dependencies>
@@ -57,6 +59,7 @@
                 <artifactId>gluonfx-maven-plugin</artifactId>
                 <version>${gluonfx.plugin.version}</version>
                 <configuration>
+                    <target>${gluonfx.target}</target>
                     <mainClass>${main.class}</mainClass>
                     <attachList>
                         <list>util</list>
@@ -78,79 +81,16 @@
 
     <profiles>
         <profile>
-            <id>desktop</id>
-            <activation>
-                <activeByDefault>true</activeByDefault>
-            </activation>
-            <properties>
-                <gluonfx.target>host</gluonfx.target>
-            </properties>
-        </profile>
-
-        <profile>
             <id>android</id>
             <properties>
                 <gluonfx.target>android</gluonfx.target>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.gluonhq</groupId>
-                        <artifactId>gluonfx-maven-plugin</artifactId>
-                        <version>${gluonfx.plugin.version}</version>
-                        <configuration>
-                            <mainClass>${main.class}</mainClass>
-                            <target>${gluonfx.target}</target>
-                            <attachList>
-                                <list>util</list>
-                                <list>display</list>
-                                <list>lifecycle</list>
-                                <list>statusbar</list>
-                                <list>storage</list>
-                            </attachList>
-                            <reflectionList>
-                                <list>${main.class}</list>
-                            </reflectionList>
-                            <bundlesList>
-                                <list>com.example</list>
-                            </bundlesList>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
-
         <profile>
             <id>ios</id>
             <properties>
                 <gluonfx.target>ios</gluonfx.target>
             </properties>
-            <build>
-                <plugins>
-                    <plugin>
-                        <groupId>com.gluonhq</groupId>
-                        <artifactId>gluonfx-maven-plugin</artifactId>
-                        <version>${gluonfx.plugin.version}</version>
-                        <configuration>
-                            <mainClass>${main.class}</mainClass>
-                            <target>${gluonfx.target}</target>
-                            <attachList>
-                                <list>util</list>
-                                <list>display</list>
-                                <list>lifecycle</list>
-                                <list>statusbar</list>
-                                <list>storage</list>
-                            </attachList>
-                            <reflectionList>
-                                <list>${main.class}</list>
-                            </reflectionList>
-                            <bundlesList>
-                                <list>com.example</list>
-                            </bundlesList>
-                        </configuration>
-                    </plugin>
-                </plugins>
-            </build>
         </profile>
     </profiles>
 

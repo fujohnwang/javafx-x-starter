@@ -43,12 +43,12 @@ jobs:
           if [ -d "target/gluonfx/x86_64-linux" ]; then
             cp -a target/gluonfx/x86_64-linux/. dist/linux/
             # Create startup script
-            cat > dist/linux/start.sh << 'EOF'
-            #!/bin/bash
-            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
-            cd "$SCRIPT_DIR"
-            ./javafx-cross-platform-starter
-            EOF
+            cat > dist/linux/start.sh <<'EOF'
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+cd "$SCRIPT_DIR"
+./javafx-cross-platform-starter
+EOF
             chmod +x dist/linux/start.sh
           fi
           cd dist && tar -czf javafx-app-linux-x64.tar.gz linux/
@@ -135,12 +135,12 @@ jobs:
           fi
           # Create startup script only if executable exists
           if [ -f "dist/macos/javafx-cross-platform-starter" ]; then
-            cat > dist/macos/start.sh << 'EOF'
-            #!/bin/bash
-            SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
-            cd "$SCRIPT_DIR"
-            ./javafx-cross-platform-starter
-            EOF
+            cat > dist/macos/start.sh <<'EOF'
+#!/bin/bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
+cd "$SCRIPT_DIR"
+./javafx-cross-platform-starter
+EOF
             chmod +x dist/macos/start.sh
           fi
           cd dist && tar -czf javafx-app-macos.tar.gz macos/
