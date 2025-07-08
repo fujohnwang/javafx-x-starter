@@ -41,6 +41,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          components: 'native-image'
 
       - name: Cache Maven dependencies
         uses: actions/cache@v4
@@ -90,6 +91,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          components: 'native-image'
 
       - name: Cache Maven dependencies
         uses: actions/cache@v4
@@ -143,6 +145,7 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: 'graalvm'
           github-token: ${{ secrets.GITHUB_TOKEN }}
+          components: 'native-image'
 
       - name: Cache Maven dependencies
         uses: actions/cache@v4
