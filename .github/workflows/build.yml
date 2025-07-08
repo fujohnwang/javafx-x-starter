@@ -32,13 +32,17 @@ jobs:
       - name: Install Linux dependencies
         run: sudo apt-get update && sudo apt-get install -y build-essential libz-dev
 
-      - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          components: 'native-image'
+      # 下载 GluonHQ 官方 GraalVM
+      - name: Download Gluon GraalVM
+        run: |
+          wget https://download.gluonhq.com/graalvm/21.0.0.1/graalvm-svm-java21-linux-gluon-22.3.2.zip
+          unzip graalvm-svm-java21-linux-gluon-22.3.2.zip -d $HOME
+          echo "GRAALVM_HOME=$HOME/graalvm-svm-java21-22.3.2" >> $GITHUB_ENV
+          echo "$HOME/graalvm-svm-java21-22.3.2/bin" >> $GITHUB_PATH
+
+      # 设置 JAVA_HOME
+      - name: Set JAVA_HOME
+        run: echo "JAVA_HOME=$HOME/graalvm-svm-java21-22.3.2" >> $GITHUB_ENV
 
       - name: Cache Maven dependencies
         uses: actions/cache@v4
@@ -76,13 +80,19 @@ jobs:
         with:
           maven-version: 3.8.8
 
-      - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          components: 'native-image'
+      # 下载 GluonHQ 官方 GraalVM (Windows)
+      - name: Download Gluon GraalVM (Windows)
+        run: |
+          Invoke-WebRequest -Uri "https://download.gluonhq.com/graalvm/21.0.0.1/graalvm-svm-java21-windows-gluon-22.3.2.zip" -OutFile "graalvm-svm-java21-windows-gluon-22.3.2.zip"
+          Expand-Archive -Path "graalvm-svm-java21-windows-gluon-22.3.2.zip" -DestinationPath "$env:USERPROFILE"
+          echo "GRAALVM_HOME=$env:USERPROFILE\graalvm-svm-java21-22.3.2" | Out-File -FilePath $env:GITHUB_ENV -Append
+          echo "$env:USERPROFILE\graalvm-svm-java21-22.3.2\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
+        shell: pwsh
+
+      # 设置 JAVA_HOME (Windows)
+      - name: Set JAVA_HOME (Windows)
+        run: echo "JAVA_HOME=$env:USERPROFILE\graalvm-svm-java21-22.3.2" | Out-File -FilePath $env:GITHUB_ENV -Append
+        shell: pwsh
 
       - name: Cache Maven dependencies
         uses: actions/cache@v4
@@ -124,13 +134,17 @@ jobs:
         with:
           maven-version: 3.8.8
 
-      - name: Set up GraalVM
-        uses: graalvm/setup-graalvm@v1
-        with:
-          java-version: ${{ env.JAVA_VERSION }}
-          distribution: 'graalvm'
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          components: 'native-image'
+      # 下载 GluonHQ 官方 GraalVM (macOS)
+      - name: Download Gluon GraalVM (macOS)
+        run: |
+          curl -L -o graalvm-svm-java21-macos-gluon-22.3.2.zip https://download.gluonhq.com/graalvm/21.0.0.1/graalvm-svm-java21-macos-gluon-22.3.2.zip
+          unzip graalvm-svm-java21-macos-gluon-22.3.2.zip -d $HOME
+          echo "GRAALVM_HOME=$HOME/graalvm-svm-java21-22.3.2" >> $GITHUB_ENV
+          echo "$HOME/graalvm-svm-java21-22.3.2/bin" >> $GITHUB_PATH
+
+      # 设置 JAVA_HOME (macOS)
+      - name: Set JAVA_HOME (macOS)
+        run: echo "JAVA_HOME=$HOME/graalvm-svm-java21-22.3.2" >> $GITHUB_ENV
 
       - name: Cache Maven dependencies
         uses: actions/cache@v4
