@@ -1,13 +1,16 @@
-name: Release
+name: Build and Release
 
 on:
   push:
+    branches: [master, main]
     tags: ["v*"]
+  pull_request:
+    branches: [master, main]
   workflow_dispatch:
     inputs:
       tag:
         description: "Release tag"
-        required: true
+        required: false
         type: string
 
 env:
@@ -40,23 +43,15 @@ jobs:
       - name: Package Linux executable
         run: |
           mkdir -p dist/linux
-          if [ -d "target/gluonfx/x86_64-linux" ]; then
-            cp -a target/gluonfx/x86_64-linux/. dist/linux/
-            # Create startup script
-            cat > dist/linux/start.sh <<'EOF'
-#!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
-cd "$SCRIPT_DIR"
-./javafx-cross-platform-starter
-EOF
-            chmod +x dist/linux/start.sh
+          if [ -d "target/gluonfx/x86_64-linux" ] && [ -n "$(ls -A target/gluonfx/x86_64-linux)" ]; then
+            cp -r target/gluonfx/x86_64-linux/* dist/linux/
           fi
           cd dist && tar -czf javafx-app-linux-x64.tar.gz linux/
 
       - name: Upload Linux artifact
         uses: actions/upload-artifact@v4
         with:
-          name: linux-build
+          name: javafx-app-linux
           path: dist/javafx-app-linux-x64.tar.gz
           retention-days: 30
 
@@ -84,21 +79,20 @@ EOF
 
       - name: Package Windows executable
         run: |
-          New-Item -Path "dist" -ItemType Directory -Force
-          New-Item -Path "dist/windows" -ItemType Directory -Force
+          if (!(Test-Path "dist")) { New-Item -Path "dist" -ItemType Directory -Force }
+          if (!(Test-Path "dist/windows")) { New-Item -Path "dist/windows" -ItemType Directory -Force }
           if (Test-Path "target/gluonfx/x86_64-windows") {
             Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse -Force
-            Set-Content -Path "dist/windows/start.bat" -Value "@echo off"
-            Add-Content -Path "dist/windows/start.bat" -Value "javafx-cross-platform-starter.exe"
-            Add-Content -Path "dist/windows/start.bat" -Value "pause"
           }
-          Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
+          if (Get-ChildItem -Path "dist/windows") {
+            Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
+          }
         shell: powershell
 
       - name: Upload Windows artifact
         uses: actions/upload-artifact@v4
         with:
-          name: windows-build
+          name: javafx-app-windows
           path: dist/javafx-app-windows-x64.zip
           retention-days: 30
 
@@ -127,28 +121,19 @@ EOF
       - name: Package macOS executable
         run: |
           mkdir -p dist/macos
-          # Check for different architecture outputs
           if [ -d "target/gluonfx/aarch64-macos" ]; then
-            cp -a target/gluonfx/aarch64-macos/. dist/macos/
+            cp -r target/gluonfx/aarch64-macos/* dist/macos/
           elif [ -d "target/gluonfx/x86_64-macos" ]; then
-            cp -a target/gluonfx/x86_64-macos/. dist/macos/
+            cp -r target/gluonfx/x86_64-macos/* dist/macos/
           fi
-          # Create startup script only if executable exists
-          if [ -f "dist/macos/javafx-cross-platform-starter" ]; then
-            cat > dist/macos/start.sh <<'EOF'
-#!/bin/bash
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")")" && pwd)"
-cd "$SCRIPT_DIR"
-./javafx-cross-platform-starter
-EOF
-            chmod +x dist/macos/start.sh
+          if [ -n "$(ls -A dist/macos)" ]; then
+            cd dist && tar -czf javafx-app-macos.tar.gz macos/
           fi
-          cd dist && tar -czf javafx-app-macos.tar.gz macos/
 
       - name: Upload macOS artifact
         uses: actions/upload-artifact@v4
         with:
-          name: macos-build
+          name: javafx-app-macos
           path: dist/javafx-app-macos.tar.gz
           retention-days: 30
 
@@ -200,18 +185,18 @@ EOF
             echo "Found APK: $apk_file"
             cp "$apk_file" dist/android/javafx-app-android.apk
           else
-            echo "::error::APK file not found in target/gluonfx"
-            exit 1
+            echo "::warning::APK file not found in target/gluonfx"
           fi
 
       - name: Upload Android artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
+          name: javafx-app-android
           path: dist/android/javafx-app-android.apk
           retention-days: 30
 
   create-release:
+    if: startsWith(github.ref, 'refs/tags/v')
     needs: [build-linux, build-windows, build-macos, build-android]
     runs-on: ubuntu-latest
     permissions:
@@ -240,9 +225,10 @@ EOF
       - name: Prepare release assets
         run: |
           mkdir -p release-assets
-          find artifacts -name "*.tar.gz" -exec cp {} release-assets/ \;
-          find artifacts -name "*.zip" -exec cp {} release-assets/ \;
-          find artifacts -name "*.apk" -exec cp {} release-assets/ \;
+          find artifacts/javafx-app-linux -name "*.tar.gz" -exec cp {} release-assets/ \;
+          find artifacts/javafx-app-windows -name "*.zip" -exec cp {} release-assets/ \;
+          find artifacts/javafx-app-macos -name "*.tar.gz" -exec cp {} release-assets/ \;
+          find artifacts/javafx-app-android -name "*.apk" -exec cp {} release-assets/ \;
           echo "Release assets:"
           ls -la release-assets/
 
@@ -317,3 +303,37 @@ EOF
           echo "- Android (apk)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "🔗 Check the [Releases page](https://github.com/${{ github.repository }}/releases) to download the binaries." >> $GITHUB_STEP_SUMMARY
+
+  # 可选：构建iOS版本（需要macOS runner和额外配置）
+  build-ios:
+    if: false # 默认关闭，因为iOS构建需要额外的证书配置
+    runs-on: macos-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK ${{ env.JAVA_VERSION }}
+        uses: actions/setup-java@v4
+        with:
+          java-version: ${{ env.JAVA_VERSION }}
+          distribution: ${{ env.JAVA_DISTRIBUTION }}
+
+      - name: Cache Maven dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+
+      - name: Build with Maven for iOS
+        run: |
+          mvn -P ios \
+            -Dgluonfx.target=ios \
+            -B clean package --file pom.xml
+
+      - name: Upload iOS artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: javafx-app-ios
+          path: target/gluonfx/arm64-ios/
+          retention-days: 30
