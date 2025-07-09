@@ -45,61 +45,39 @@ jobs:
         with:
           name: linux-package
 #          path: dist/
-          path: dist/linux/javafx-app-linux-x64.tar.gz
-#
-#  build-windows:
-#    runs-on: windows-latest
-#    steps:
-#      - name: Checkout code
-#        uses: actions/checkout@v4
-#
-#      - name: Set up Maven
-#        uses: stCarolas/setup-maven@v4.5
-#        with:
-#          maven-version: 3.8.8
-#
-#      # 下载 GluonHQ 官方 GraalVM (Windows)
-#      - name: Download Gluon GraalVM (Windows)
-#        run: |
-#          Invoke-WebRequest -Uri "https://download.gluonhq.com/graalvm/21.0.0.1/graalvm-svm-java21-windows-gluon-22.3.2.zip" -OutFile "graalvm-svm-java21-windows-gluon-22.3.2.zip"
-#          Expand-Archive -Path "graalvm-svm-java21-windows-gluon-22.3.2.zip" -DestinationPath "$env:USERPROFILE"
-#          echo "GRAALVM_HOME=$env:USERPROFILE\graalvm-svm-java21-22.3.2" | Out-File -FilePath $env:GITHUB_ENV -Append
-#          echo "$env:USERPROFILE\graalvm-svm-java21-22.3.2\bin" | Out-File -FilePath $env:GITHUB_PATH -Append
-#        shell: pwsh
-#
-#      # 设置 JAVA_HOME (Windows)
-#      - name: Set JAVA_HOME (Windows)
-#        run: echo "JAVA_HOME=$env:USERPROFILE\graalvm-svm-java21-22.3.2" | Out-File -FilePath $env:GITHUB_ENV -Append
-#        shell: pwsh
-#
-#      - name: Cache Maven dependencies
-#        uses: actions/cache@v4
-#        with:
-#          path: ~/.m2
-#          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
-#          restore-keys: ${{ runner.os }}-m2
-#
-#      - name: Build with Maven
-#        run: mvn -B clean package --file pom.xml "-Dgluonfx.target=host" "-Dgluonfx.aot.graalvm-home=${{ env.GRAALVM_HOME }}"
-#
-#      - name: Package Windows executable
-#        run: |
-#          if (!(Test-Path "dist")) { New-Item -Path "dist" -ItemType Directory -Force }
-#          if (!(Test-Path "dist/windows")) { New-Item -Path "dist/windows" -ItemType Directory -Force }
-#          if (Test-Path "target/gluonfx/x86_64-windows") {
-#            Copy-Item -Path "target/gluonfx/x86_64-windows/*" -Destination "dist/windows/" -Recurse -Force
-#          }
-#          if (Get-ChildItem -Path "dist/windows") {
-#            Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
-#          }
-#        shell: powershell
-#
-#      - name: Upload Windows artifact
-#        uses: actions/upload-artifact@v4
-#        with:
-#          name: javafx-app-windows
-#          path: dist/javafx-app-windows-x64.zip
-#          retention-days: 30
+          path: dist/javafx-app-linux-x64.tar.gz
+
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'graalvm'
+          java-version: '24'
+
+      - name: Build with Maven
+        run: mvn clean package
+
+      - name: Package Windows executable
+        run: |
+          if (!(Test-Path "dist")) { New-Item -Path "dist" -ItemType Directory -Force }
+          if (!(Test-Path "dist/windows")) { New-Item -Path "dist/windows" -ItemType Directory -Force }
+          Copy-Item -Path "target/*.jar" -Destination "dist/windows/" -Recurse -Force
+          if (Get-ChildItem -Path "dist/windows") {
+            Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
+          }
+        shell: powershell
+
+      - name: Upload Windows artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: javafx-app-windows
+          path: dist/javafx-app-windows-x64.zip
+          retention-days: 30
 #
 #  build-macos:
 #    runs-on: macos-latest
