@@ -1,6 +1,9 @@
 @echo off
 setlocal enabledelayedexpansion
 
+@REM set JDK=%1
+@REM 使用github actions workflow的环境变量定义传入JDK路径
+
 :: 前置逻辑：清理、构建和复制文件到 pkg 目录
 :: 删除 pkg 目录（等同于 rm -rf pkg）
 if exist pkg (
@@ -70,7 +73,7 @@ if not exist %OUTPUT_DIR% (
 
 :: 运行 jpackage 命令
 echo Creating Windows installer...
-"%JAVA_HOME%\bin\jpackage.exe" ^
+"%s%\bin\jpackage.exe" ^
   --type exe ^
   --input pkg ^
   --name %APP_NAME% ^
