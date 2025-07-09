@@ -1,8 +1,11 @@
 #!/bin/bash
 
 # 设置基本参数
-INPUT_DIR="pkg"
-OUTPUT_DIR="dist"
+WORKDIR=`pwd`
+echo ${WORKDIR}
+
+INPUT_DIR="${WORKDIR}/pkg"
+OUTPUT_DIR="${WORKDIR}/dist"
 APP_NAME="javafx-app"
 JAR_FILE_NAME="javafx-cross-platform-starter-1.0-SNAPSHOT-mac.jar"
 JAR_FILE="${INPUT_DIR}/${JAR_FILE_NAME}"
@@ -26,9 +29,6 @@ fi
 mkdir -p "$INPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
-
-WORKDIR=`pwd`
-echo ${WORKDIR}
 
 echo "copy jar from target to pkg dir..."
 cp -Rv "${WORKDIR}"/target/*.jar "${INPUT_DIR}/"
