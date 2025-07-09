@@ -44,7 +44,8 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: linux-package
-          path: dist/
+#          path: dist/
+          path: dist/javafx-app-linux-x64.tar.gz
 #
 #  build-windows:
 #    runs-on: windows-latest
