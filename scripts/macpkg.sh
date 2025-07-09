@@ -44,7 +44,7 @@ fi
 echo "Creating macOS DMG installer..."
 "${JAVA_HOME}"/bin/jpackage \
   --type dmg \
-  --input "./${INPUT_DIR}" \
+  --input "${INPUT_DIR}" \
   --name "$APP_NAME" \
   --main-jar "${JAR_FILE}" \
   --main-class "$MAIN_CLASS" \
