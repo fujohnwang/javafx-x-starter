@@ -110,7 +110,7 @@ jobs:
 #          cd dist && tar -czf javafx-app-macos.tar.gz macos/
 
       - name: Package macOS executable
-        run: ./scripts/macpkg.sh
+        run: chmod +x ./scripts/macpkg.sh && ./scripts/macpkg.sh
         env:
           JAVA_HOME: ${{ env.JAVA_HOME }}
 
