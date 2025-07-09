@@ -1,11 +1,11 @@
 #!/bin/bash
 
 # 设置基本参数
-APP_NAME="javafx-app"
-JAR_FILE="javafx-cross-platform-starter-1.0-SNAPSHOT-mac.jar"
-JAR_FILE="target/${JAR_FILE}"
 INPUT_DIR="pkg/"
 OUTPUT_DIR="dist/"
+APP_NAME="javafx-app"
+JAR_FILE="javafx-cross-platform-starter-1.0-SNAPSHOT-mac.jar"
+JAR_FILE="${INPUT_DIR}/${JAR_FILE}"
 APP_VERSION="1.0.0"
 MAIN_CLASS="com.example.AppLauncher"
 VENDOR="KEEVOL"
@@ -13,13 +13,6 @@ DESCRIPTION="Fuqiang's JavaFX Application"
 COPYRIGHT="Copyright © 2025 KEEVOL.cn"
 JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 ICON_PATH="fixtures/my_icon.icns"
-
-
-# 检查 JAR 文件是否存在
-if [ ! -f "$JAR_FILE" ]; then
-    echo "Error: $JAR_FILE not found. Please run 'mvn package' first."
-    exit 1
-fi
 
 # 删除旧的输出目录
 if [ -d "$INPUT_DIR" ]; then
@@ -34,6 +27,12 @@ mkdir -p "$INPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 cp target/*.jar "${INPUT_DIR}"
+
+# 检查 JAR 文件是否存在
+if [ ! -f "$JAR_FILE" ]; then
+    echo "Error: $JAR_FILE not found. Please run 'mvn package' first."
+    exit 1
+fi
 
 # 运行 jpackage 命令
 echo "Creating macOS DMG installer..."
