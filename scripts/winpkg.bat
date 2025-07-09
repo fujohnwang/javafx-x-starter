@@ -4,9 +4,9 @@ setlocal enabledelayedexpansion
 @REM set JDK=%1
 @REM 使用github actions workflow的环境变量定义传入JDK路径
 
-echo Java home = %JAVA_HOME%
-dir %JAVA_HOME%
-dir %JAVA_HOME%\bin
+@REM echo Java home = %JAVA_HOME%
+@REM dir %JAVA_HOME%
+@REM dir %JAVA_HOME%\bin
 
 :: 前置逻辑：清理、构建和复制文件到 pkg 目录
 :: 删除 pkg 目录（等同于 rm -rf pkg）
@@ -61,12 +61,6 @@ set JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Dfile.encoding=UTF-8"
 :: 检查 JAR 文件是否存在
 if not exist %MAIN_JAR% (
     echo Error: %MAIN_JAR% not found. Please check the copy step.
-    exit /b 1
-)
-
-:: 检查 JDK 路径是否有效
-if not exist "%JDK_PATH%\bin\jpackage.exe" (
-    echo Error: jpackage not found in %JDK_PATH%\bin. Please check JDK path.
     exit /b 1
 )
 
