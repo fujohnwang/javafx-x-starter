@@ -56,7 +56,7 @@ set DESCRIPTION="Fuqiang JavaFX Application"
 set COPYRIGHT="Copyright © 2025 KEEVOL.cn"
 set MAIN_CLASS=com.example.AppLauncher
 set INSTALLER_NAME=%APP_NAME%-Installer
-set JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED -Dfile.encoding=UTF-8"
+set JAVA_OPTIONS="--enable-native-access=ALL-UNNAMED"
 
 :: 检查 JAR 文件是否存在
 if not exist %MAIN_JAR% (
