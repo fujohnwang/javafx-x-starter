@@ -63,8 +63,6 @@ if not exist %MAIN_JAR% (
     echo Error: %MAIN_JAR% not found. Please check the copy step.
     exit /b 1
 )
-@REM fatjar to dist also
-copy target\javafx*.jar dist\
 
 :: 创建输出目录
 if not exist %OUTPUT_DIR% (
@@ -98,4 +96,10 @@ if %ERRORLEVEL% neq 0 (
 )
 
 echo Installer created successfully at %OUTPUT_DIR%\%INSTALLER_NAME%.msi
+
+@REM fatjar to dist also
+echo also copy fatjar as release artifact too.
+copy %MAIN_JAR% %OUTPUT_DIR%
+
 endlocal
+

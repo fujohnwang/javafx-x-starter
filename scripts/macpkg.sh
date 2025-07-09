@@ -66,3 +66,6 @@ fi
 
 echo "Installer created successfully at ${OUTPUT_DIR}/$APP_NAME-$APP_VERSION.dmg"
 ls -l "${OUTPUT_DIR}"
+
+echo "cp fatjar to dist dir as release fixture too"
+cp "$JAR_FILE" "$OUTPUT_DIR"
