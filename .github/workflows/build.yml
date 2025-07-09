@@ -158,6 +158,7 @@ jobs:
             dist/**/*.tar.gz
             dist/**/*.dmg
             dist/**/*.exe
+            dist/**/*.msi
             dist/**/javafx*.jar
 
       - name: Upload release summary

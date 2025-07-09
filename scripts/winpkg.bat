@@ -48,7 +48,7 @@ echo Files copied successfully to pkg directory.
 set APP_NAME=javafx-app
 set JAR_FILE=javafx-cross-platform-starter-1.0-SNAPSHOT-win.jar
 set MAIN_JAR=pkg\%JAR_FILE%
-set OUTPUT_DIR=target\installer
+set OUTPUT_DIR=dist\
 set ICON_PATH=pkg\goatman.ico
 set APP_VERSION=1.0.0
 set VENDOR=KEEVOL
@@ -72,7 +72,7 @@ if not exist %OUTPUT_DIR% (
 :: 运行 jpackage 命令
 echo Creating Windows installer...
 "%JAVA_HOME%\bin\jpackage.exe" ^
-  --type exe ^
+  --type msi ^
   --input pkg ^
   --name %APP_NAME% ^
   --main-jar %JAR_FILE% ^
