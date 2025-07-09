@@ -24,10 +24,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'graalvm'
+          distribution: 'oracle'
           java-version: '24'
 
       - name: Build with Maven
@@ -53,10 +53,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'graalvm'
+          distribution: 'oracle'
           java-version: '24'
 
       - name: Build with Maven
@@ -71,6 +71,11 @@ jobs:
       #            Compress-Archive -Path "dist/windows" -DestinationPath "dist/javafx-app-windows-x64.zip" -Force
       #          }
       #        shell: powershell
+
+      - name: Install WiX Toolset
+        run: choco install wixtoolset -y
+        shell: powershell
+
       - name: Build windows installable
         run: .\scripts\winpkg.bat
 
@@ -87,10 +92,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up JDK 21
+      - name: Set up JDK
         uses: actions/setup-java@v4
         with:
-          distribution: 'graalvm'
+          distribution: 'oracle'
           java-version: '24'
 
       - name: Build with Maven
