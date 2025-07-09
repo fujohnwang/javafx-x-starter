@@ -27,7 +27,7 @@ mkdir -p "$INPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
 echo "copy jar from target to pkg dir..."
-cp -Rv "target/*.jar" "${INPUT_DIR}/"
+cp -Rv "./target/*.jar" "${INPUT_DIR}/"
 
 # 检查 JAR 文件是否存在
 if [ ! -f "$JAR_FILE" ]; then
