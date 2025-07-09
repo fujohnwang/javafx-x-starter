@@ -53,69 +53,44 @@
                     <mainClass>${main.class}</mainClass>
                 </configuration>
             </plugin>
-
-            <plugin>
-                <groupId>com.gluonhq</groupId>
-                <artifactId>gluonfx-maven-plugin</artifactId>
-                <version>${gluonfx.plugin.version}</version>
-                <executions>
-                    <execution>
-                        <id>gluon-package</id>
-                        <phase>package</phase>
-                        <goals>
-                            <goal>build</goal>
-                            <goal>package</goal>
-                        </goals>
-                    </execution>
-                </executions>
-                <configuration>
-                    <target>${gluonfx.target}</target>
-                    <mainClass>${main.class}</mainClass>
-                    <attachList>
-                        <list>util</list>
-                        <list>display</list>
-                        <list>lifecycle</list>
-                        <list>statusbar</list>
-                        <list>storage</list>
-                    </attachList>
-                    <reflectionList>
-                        <list>${main.class}</list>
-                    </reflectionList>
-                    <bundlesList>
-                        <list>com.example</list>
-                    </bundlesList>
-                </configuration>
-            </plugin>
         </plugins>
     </build>
 
     <profiles>
         <profile>
-            <id>android</id>
-            <properties>
-                <gluonfx.target>android</gluonfx.target>
-            </properties>
+            <id>windows</id>
+            <activation>
+                <os>
+                    <family>Windows</family>
+                </os>
+            </activation>
+            <build>
+                <finalName>${project.artifactId}-${project.version}-windows</finalName>
+            </build>
         </profile>
         <profile>
-            <id>ios</id>
-            <properties>
-                <gluonfx.target>ios</gluonfx.target>
-            </properties>
+            <id>linux</id>
+            <activation>
+                <os>
+                    <family>unix</family>
+                </os>
+            </activation>
+            <build>
+                <finalName>${project.artifactId}-${project.version}-linux</finalName>
+            </build>
+        </profile>
+        <profile>
+            <id>mac</id>
+            <activation>
+                <os>
+                    <family>mac</family>
+                </os>
+            </activation>
+            <build>
+                <finalName>${project.artifactId}-${project.version}-mac</finalName>
+            </build>
         </profile>
     </profiles>
 
-    <repositories>
-        <repository>
-            <id>gluon-releases</id>
-            <url>https://nexus.gluonhq.com/nexus/content/repositories/releases/</url>
-        </repository>
-        <repository>
-            <id>sonatype-snapshots</id>
-            <url>https://oss.sonatype.org/content/repositories/snapshots/</url>
-            <snapshots>
-                <enabled>true</enabled>
-            </snapshots>
-        </repository>
-    </repositories>
 
 </project>

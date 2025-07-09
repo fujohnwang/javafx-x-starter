@@ -1,0 +1,1 @@
+java -jar javafx-cross-platform-starter-1.0-SNAPSHOT-linux.jar
