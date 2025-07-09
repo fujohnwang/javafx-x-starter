@@ -5,6 +5,8 @@ setlocal enabledelayedexpansion
 @REM 使用github actions workflow的环境变量定义传入JDK路径
 
 echo Java home = %JAVA_HOME%
+dir %JAVA_HOME%
+dir %JAVA_HOME%\bin
 
 :: 前置逻辑：清理、构建和复制文件到 pkg 目录
 :: 删除 pkg 目录（等同于 rm -rf pkg）
