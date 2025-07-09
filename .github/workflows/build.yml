@@ -2,10 +2,10 @@ name: Build and Release
 
 on:
   push:
-#    branches: [master, main]
-    tags: ["v*"]
+    #    branches: [master, main]
+    tags: [ "v*" ]
   pull_request:
-    branches: [master, main]
+    branches: [ master, main ]
   workflow_dispatch:
     inputs:
       tag:
@@ -45,7 +45,7 @@ jobs:
         with:
           name: linux-package
           path: dist/
-#          path: dist/javafx-app-linux-x64.tar.gz
+  #          path: dist/javafx-app-linux-x64.tar.gz
 
   build-windows:
     runs-on: windows-latest
@@ -110,7 +110,7 @@ jobs:
 
   create-release:
     if: startsWith(github.ref, 'refs/tags/v')
-    needs: [build-linux, build-windows, build-macos]
+    needs: [ build-linux, build-windows, build-macos ]
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -140,12 +140,13 @@ jobs:
           mkdir -p release-assets
           ls -l dist
 
+      # 注意dist/**是两个*， 一个*会找不到，因为artifact下载下来后是dist/{artifact_name}/然后才是之前上传到相应文件夹和文件
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
           files: |
-            dist/*
+            dist/**
             *.tar.gz
 
       - name: Upload release summary
