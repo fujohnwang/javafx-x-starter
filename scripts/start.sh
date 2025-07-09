@@ -1,1 +1,1 @@
-java -jar javafx-cross-platform-starter-1.0-SNAPSHOT-linux.jar
+java -jar --enable-native-access=ALL-UNNAMED javafx-cross-platform-starter-1.0-SNAPSHOT-linux.jar
