@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # 设置基本参数
-INPUT_DIR="pkg/"
-OUTPUT_DIR="dist/"
+INPUT_DIR="pkg"
+OUTPUT_DIR="dist"
 APP_NAME="javafx-app"
 JAR_FILE_NAME="javafx-cross-platform-starter-1.0-SNAPSHOT-mac.jar"
 JAR_FILE="${INPUT_DIR}/${JAR_FILE_NAME}"
@@ -26,7 +26,8 @@ fi
 mkdir -p "$INPUT_DIR"
 mkdir -p "$OUTPUT_DIR"
 
-cp target/*.jar "${INPUT_DIR}"
+echo "copy jar from target to pkg dir..."
+cp -Rv "target/*.jar" "${INPUT_DIR}/"
 
 # 检查 JAR 文件是否存在
 if [ ! -f "$JAR_FILE" ]; then
@@ -34,11 +35,13 @@ if [ ! -f "$JAR_FILE" ]; then
     exit 1
 fi
 
+ls "${INPUT_DIR}"
+
 # 运行 jpackage 命令
 echo "Creating macOS DMG installer..."
 "${JAVA_HOME}/bin/jpackage" \
   --type dmg \
-  --input "${INPUT_DIR}" \
+  --input "./${INPUT_DIR}" \
   --name "$APP_NAME" \
   --main-jar "${JAR_FILE}" \
   --main-class "$MAIN_CLASS" \
