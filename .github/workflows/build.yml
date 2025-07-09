@@ -145,7 +145,7 @@ jobs:
         if: github.ref_type == 'tag'
         with:
           files: |
-            *.jar
+            dist/*
             *.tar.gz
 
       - name: Upload release summary
