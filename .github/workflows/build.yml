@@ -149,18 +149,12 @@ jobs:
         with:
           path: dist/
 
-      - name: Prepare release assets
-        run: |
-          mkdir -p release-assets
-          ls -l dist
-          echo "github.workspace value = >>>>> ${{ github.workspace }} and body_path = ${{ github.workspace }}-CHANGELOG.txt"
-
       # 注意dist/**是两个*， 一个*会找不到，因为artifact下载下来后是dist/{artifact_name}/然后才是之前上传到相应文件夹和文件
       - name: Release
         uses: softprops/action-gh-release@v2
         if: github.ref_type == 'tag'
         with:
-          body_path: ${{ github.workspace }}-CHANGELOG.txt
+          body_path: ${{ github.workspace }}/CHANGELOG.txt
           files: |
             dist/**/*.tar.gz
             dist/**/*.dmg
