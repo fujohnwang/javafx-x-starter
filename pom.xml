@@ -32,24 +32,7 @@
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-graphics</artifactId>
             <version>${javafx.version}</version>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>win</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>linux</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.openjfx</groupId>
-            <artifactId>javafx-graphics</artifactId>
-            <version>${javafx.version}</version>
-            <classifier>mac</classifier>
+            <classifier>${javafx.platform}</classifier>
         </dependency>
     </dependencies>
 
@@ -77,7 +60,8 @@
                         </goals>
                         <configuration>
                             <transformers>
-                                <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <transformer
+                                        implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
                                     <mainClass>com.example.AppLauncher</mainClass>
                                 </transformer>
                             </transformers>
@@ -90,6 +74,7 @@
         </plugins>
     </build>
 
+    <!--  customize final jar name as per OS type  -->
     <profiles>
         <profile>
             <id>win</id>
@@ -98,8 +83,11 @@
                     <family>Windows</family>
                 </os>
             </activation>
+            <properties>
+                <javafx.platform>win</javafx.platform>
+            </properties>
             <build>
-                <finalName>${project.artifactId}-${project.version}-windows</finalName>
+                <finalName>${project.artifactId}-${project.version}-win</finalName>
             </build>
         </profile>
         <profile>
@@ -109,6 +97,9 @@
                     <family>unix</family>
                 </os>
             </activation>
+            <properties>
+                <javafx.platform>linux</javafx.platform>
+            </properties>
             <build>
                 <finalName>${project.artifactId}-${project.version}-linux</finalName>
             </build>
@@ -120,6 +111,9 @@
                     <family>mac</family>
                 </os>
             </activation>
+            <properties>
+                <javafx.platform>mac</javafx.platform>
+            </properties>
             <build>
                 <finalName>${project.artifactId}-${project.version}-mac</finalName>
             </build>
