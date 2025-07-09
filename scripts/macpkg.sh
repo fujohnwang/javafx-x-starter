@@ -30,44 +30,39 @@ mkdir -p "$OUTPUT_DIR"
 WORKDIR=`pwd`
 echo ${WORKDIR}
 
-ls "${WORKDIR}"
+echo "copy jar from target to pkg dir..."
+cp -Rv "${WORKDIR}"/target/*.jar "${INPUT_DIR}/"
+
+# 检查 JAR 文件是否存在
+if [ ! -f "$JAR_FILE" ]; then
+    echo "Error: $JAR_FILE not found. Please run 'mvn package' first."
+    exit 1
+fi
 
 
+# 运行 jpackage 命令
+echo "Creating macOS DMG installer..."
+"${JAVA_HOME}"/bin/jpackage \
+  --type dmg \
+  --input "./${INPUT_DIR}" \
+  --name "$APP_NAME" \
+  --main-jar "${JAR_FILE}" \
+  --main-class "$MAIN_CLASS" \
+  --dest "${OUTPUT_DIR}" \
+  --app-version "$APP_VERSION" \
+  --vendor "$VENDOR" \
+  --description "$DESCRIPTION" \
+  --copyright "$COPYRIGHT" \
+  --icon "$ICON_PATH" \
+  --mac-package-name "$APP_NAME" \
+  --java-options "$JAVA_OPTIONS" \
+  --verbose
 
-#echo "copy jar from target to pkg dir..."
-#cp -Rv "./target/*.jar" "${INPUT_DIR}/"
-#
-## 检查 JAR 文件是否存在
-#if [ ! -f "$JAR_FILE" ]; then
-#    echo "Error: $JAR_FILE not found. Please run 'mvn package' first."
-#    exit 1
-#fi
+# 检查 jpackage 是否成功
+if [ $? -ne 0 ]; then
+    echo "Error: jpackage failed."
+    exit 1
+fi
 
-ls "${INPUT_DIR}"
-
-## 运行 jpackage 命令
-#echo "Creating macOS DMG installer..."
-#"${JAVA_HOME}/bin/jpackage" \
-#  --type dmg \
-#  --input "./${INPUT_DIR}" \
-#  --name "$APP_NAME" \
-#  --main-jar "${JAR_FILE}" \
-#  --main-class "$MAIN_CLASS" \
-#  --dest "${OUTPUT_DIR}" \
-#  --app-version "$APP_VERSION" \
-#  --vendor "$VENDOR" \
-#  --description "$DESCRIPTION" \
-#  --copyright "$COPYRIGHT" \
-#  --icon "$ICON_PATH" \
-#  --mac-package-name "$APP_NAME" \
-#  --java-options "$JAVA_OPTIONS" \
-#  --verbose
-#
-## 检查 jpackage 是否成功
-#if [ $? -ne 0 ]; then
-#    echo "Error: jpackage failed."
-#    exit 1
-#fi
-#
-#echo "Installer created successfully at ${OUTPUT_DIR}/$APP_NAME-$APP_VERSION.dmg"
-#ls -l "${OUTPUT_DIR}"
+echo "Installer created successfully at ${OUTPUT_DIR}/$APP_NAME-$APP_VERSION.dmg"
+ls -l "${OUTPUT_DIR}"
