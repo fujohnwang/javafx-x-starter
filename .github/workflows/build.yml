@@ -40,7 +40,7 @@ jobs:
           cp -r target/*.jar dist/linux/
           cd dist && tar -czf javafx-app-linux-x64.tar.gz linux/
 
-      - name: Upload Windows Package
+      - name: Upload Linux Package
         uses: actions/upload-artifact@v4
         with:
           name: linux-package

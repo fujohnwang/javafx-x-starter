@@ -1,5 +1,5 @@
 # Windows
-mvn clean package -Pwindows
+mvn clean package -Pwin
 
 # Linux
 mvn clean package -Plinux
