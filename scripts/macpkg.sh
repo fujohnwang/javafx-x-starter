@@ -50,7 +50,6 @@ echo "Creating macOS DMG installer..."
   --copyright "$COPYRIGHT" \
   --icon "$ICON_PATH" \
   --mac-package-name "$APP_NAME" \
-  --mac-menu-group "$VENDOR" \
   --java-options "$JAVA_OPTIONS" \
   --verbose
 
