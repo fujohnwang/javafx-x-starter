@@ -63,6 +63,8 @@ if not exist %MAIN_JAR% (
     echo Error: %MAIN_JAR% not found. Please check the copy step.
     exit /b 1
 )
+@REM fatjar to dist also
+copy target\javafx*.jar dist\
 
 :: 创建输出目录
 if not exist %OUTPUT_DIR% (
